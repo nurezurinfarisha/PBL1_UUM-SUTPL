@@ -1,0 +1,146 @@
+;STEP 1
+
+new
+config gwflow ats dynamic extra 95
+;Units: SI: meter-kilogram-second
+set gravity 9.81 ; m/s2
+set flow= off dyn= off echo= on
+set small
+water bulk=0
+;water density=1.9379 ->>> SI units
+water density=1000
+
+;STEP 2 
+grid 37,14
+gen -60.0,970.0 -60.0,980.0 -1.5,980.0 -1.5,970.0 i=1,17 j=1,5
+gen -1.5,970.0 -1.5,980.0 1.5,980.0 1.5,970.0 i=17,18 j=1,5
+gen 1.5,970.0 1.5,980.0 70.0,980.0 70.0,970.0 i=18,38 j=1,5
+gen -60.0,980.0 -60.0,1000.0 -1.5,1000.0 -1.5,980.0 i=1,17 j=5,15
+gen -1.5,980.0 -1.5,1000.0 1.5,1000.0 1.5,980.0 i=17,18 j=5,15
+gen 1.5,980.0 1.5,1000.0 70.0,1000.0 70.0,980.0 i=18,38 j=5,15
+; Define material models
+model elastic
+pause
+
+table 1 delete ;'u/s shell’
+table 1 -41.5,980 -1.5,1000 -8,980 -41.5,980
+table 2 delete ;d/s shell’
+table 2 1.5,1000 21.5,990 24,990 44,980 8,980 1.5,1000
+table 3 delete ;'Core'
+table 3 -1.5,1000 1.5,1000 8,980 1.5,975 -1.5,975 -8,980 -1.5,1000
+table 4 delete ;'u/s foundation’
+table 4 -60,975 -60,980 -8,980 -1.5,975 -60,975
+table 5 delete ;'d/s fundation'
+table 5 1.5,975 8,980 70,980 70,975 1.5,975
+table 6 delete ;’Bedrock'
+table 6 -60,970 -60,975 70,975 70,970 -60,970
+pause
+
+;++++ null out table above ground surface to make geometry
+table 141 delete ;Table for ground surface
+table 141 -60,980 -41.5,980 -1.5,1000 1.5,1000 21.5,990 24,990 44,980 70,980
+gen table 141 ;gen ground surface
+mod null reg 1,14 ;null out zones an the u/s side
+mod null reg 37,14 ;null out zones above d/s side
+;++++ Make d/s bench look better
+ini x 24.0 y 990 i 25 j 10 ;Moves i,j grd ...
+ini x 21.5 y 990 i 24 j 10 ;Moves i,j grd ...
+pause
+
+;STEP 3
+;++++Input material properties for;drained/initial static stress state
+group 'u/s shell' region table 1
+model mohr group 'u/s shell'
+prop d=1760 s=1.18e8 b=3.08e8 c=4.79e3 f=32 ten=7.66e3 &
+poros=.25 perm=8.44e-9 group 'u/s shell'
+
+group 'd/s shell' region table 2
+model mohr group 'd/s shell'
+prop d=1760 s=1.18e8 b=3.08e8 c=4.79e3 f=32 ten=7.66e3 &
+poros=.25 perm=8.44e-9 group 'd/s shell'
+
+group 'Core (sandy clay)' region table 3
+model mohr group 'Core (sandy clay)'
+prop d=1760 s=1.84e8 b=4.84e8 c=1.44e4 f=32 ten=2.7e4 &
+poros=.25 perm=8.44e-9 group 'Core (sandy clay)'
+
+group 'u/s fundation' region table 4
+model mohr group 'u/s fundation'
+prop d=1620 s=6.75e7 b=1.76e8 c=4.79e3 f=32 ten=9e3 &
+poros=.25 perm=8.44e-9 group 'u/s fundation'
+
+group 'd/s fundation' region table 5
+model mohr group 'd/s fundation'
+prop d=1620 s=6.75e7 b=1.76e8 c=4.79e3 f=32 ten=9e3 &
+poros=.25 perm=8.44e-8 group 'd/s fundation'
+
+group 'Bedrock' region table 6
+model mohr group 'Bedrock'
+prop d=2160 s=8.09e8 b=2.11e9 c=9.58e4 f=32 ten=1.32e5 &
+poros=.25 perm=8.44e-12 group 'Bedrock'
+
+pause
+
+;STEP 4:
+;++++++ set initial saturation
+initial saturation 0.90
+initial saturation 1.0 i 1 38 j 1 5 ; bedrock and fundation
+
+pause
+
+;initial GWT at ground 980m
+table 39 -60,980 70,980
+water table 39
+
+pause
+
+;+++++ fixed BC for static solve
+
+fix x y i 1 38 j 1 ;botton
+fix x i 1 j 2 5 ;u/s end
+fix x i 38 j 2 5 ;d/s end
+
+pause
+
+;+++++ first solve - elastic
+
+solve elastic
+
+pause
+
+;STEP 5
+;+++++ set history points
+
+history 1 ydisp i=18 j=15
+history 2 xdisp i=18 j=15
+
+;u/s foundation under mid-slope
+hist 3 pp i 12 j 3 ;grid point pore pressure
+hist 4 ssi i 12 j 3 ;shear strain increament
+hist 5 sxy i 12 j 3 ;shear stress
+hist 6 vsi i 12 j 3 ; volumetric strain
+
+;d/s foundation under mid-slope
+hist 7 pp i 23 j 3
+hist 8 ssi i 23 j 3
+hist 9 sxy i 23 j 3
+hist 10 vsi i 23 j 3
+
+;d/s foundation under d/s toe
+hist 11 pp i 30 j 3
+hist 12 ssi i 30 j 3
+hist 13 sxy i 23 j 3
+hist 14 vsi i 23 j 3
+
+;+++++ dytime and nstep
+hist 50 dytime 				;history for dynamic time
+hist nstep = 150			;number of steps between history
+
+pause
+
+;+++++ Applies mechanical reservoir pressure 105m*9860.65N/m3=986.1kPa
+
+apply press 986.1e3 var 0 -986.1e3 from 1,5 to 12,10
+solve
+
+pause

@@ -1,0 +1,51 @@
+flac: new
+                Serial Number: Demonstration
+                Licensee:
+
+                Options:
+--- No license found.  Cycling will be restricted if one continues to be unavailable.
+                               Dynamic
+                               Creep
+                               Thermal
+                               CppUdm
+                               TPFlow
+                Memory:       512.00 MBytes
+                Precision:     Double
+flac: config gwflow ats dynamic
+ Special FLAC configuration:
+   groundwater flow
+   ats on
++++ Dynamic license not currently available
++++ Model may not cycle.
+   dynamic analysis
+flac: ; Source: Block 2x2
+flac: ;Units: SI: meter-kilogram-second
+flac: set gravity 9.81 ; m/s2
+flac: grid 37,14
+flac: gen -60.0,970.0248 -60.0,980.0 -1.3257565,980.0 -1.1966591,970.1538 i=1,17 j=1,5
+flac: gen -1.1966591,970.1538 -1.3257565,980.0 1.643476,980.0 1.9016702,970.1538 i=17,18 j=1,5
+flac: gen 1.9016702,970.1538 1.643476,980.0 70.0,980.0 70.0,970.0248 i=18,38 j=1,5
+flac: gen -60.0,980.0 -60.0,999.8461 -1.5,1000.0 -1.3257565,980.0 i=1,17 j=5,15
+flac: gen -1.3257565,980.0 -1.5,1000.0 1.5,1000.0 1.643476,980.0 i=17,18 j=5,15
+flac: gen 1.643476,980.0 1.5,1000.0 70.0,999.8461 70.0,980.0 i=18,38 j=5,15
+flac: ; Define material models
+flac: model elastic i=1,16 j=1,4
+flac: model elastic i=17,17 j=1,4
+flac: model elastic i=18,37 j=1,4
+flac: model elastic i=1,16 j=5,14
+flac: model elastic i=17,17 j=5,14
+flac: model elastic i=18,37 j=5,14
+local> !auto=off
+flac: set plot giic
+flac: set filcolor 4
+flac: set plot giic
+flac: set filcolor 4
+flac: plot pen grid num gnum
+flac: save 'mesh.sav'
+Model saved to file mesh.sav.
+flac: table 15 -60,980 -41.5,980 -1.5,1000 21.5,990 24,990 44,980 70,980
+flac: generate table 15
+flac: model null region 1,14
+flac: model null region  37,14
+flac: save 'meshtuto1.sav'
+Model saved to file meshtuto1.sav.
